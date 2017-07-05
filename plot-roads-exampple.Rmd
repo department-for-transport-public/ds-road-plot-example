@@ -31,6 +31,7 @@ summary(shapefile@data)
 
 Filter down only to trunk roads and motorways
 Use rmapshaper to simplify and reduce the file size
+
 ```{r}
 f = shapefile$fclass == 'trunk' | shapefile$fclass == 'motorway'
 main_roads <- shapefile[f, ]
@@ -45,10 +46,17 @@ Plot on a map
 
 ```{r}
 pal <- colorNumeric('BuGn', domain = c(0, 125))
-leaflet(main_roads) %>%
-  addTiles() %>%
+map <- leaflet(main_roads) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
   addPolylines(opacity = 1, color = pal(main_roads$maxspeed)) %>%
   addLegend(position = 'bottomleft', pal = pal, values = seq(0, 125, by = 25), opacity = 1,
             title = 'Speed kph')
+map
+```
+
+Save the map to file
+
+```{r}
+htmlwidgets::saveWidget(map, 'example-output.html')
 ```
 
