@@ -1,0 +1,54 @@
+---
+title: "Plotting roads example"
+output: html_notebook
+---
+
+Attempting to plot roads on a map and colour the roads according to data. The idea is to colour roads according to their congestion.
+
+Road data is obtained from open street map. A website converts road data into shapefiles.
+http://download.geofabrik.de/index.html
+
+
+```{r, message = F, warning = F}
+library(tidyverse)
+library(leaflet)
+library(rgdal)
+```
+
+Download the data for Cambridgeshire as an example
+
+```{r, message = F}
+download.file('http://download.geofabrik.de/europe/great-britain/england/cambridgeshire-latest-free.shp.zip', 'cambridgeshire.zip' )
+unzip('cambridgeshire.zip', exdir = 'data')
+```
+
+Laod the shapefile corresponding to roads
+
+```{r}
+shapefile <- readOGR('data/gis.osm_roads_free_1.shp')
+summary(shapefile@data)
+```
+
+Filter down only to trunk roads and motorways
+Use rmapshaper to simplify and reduce the file size
+```{r}
+f = shapefile$fclass == 'trunk' | shapefile$fclass == 'motorway'
+main_roads <- shapefile[f, ]
+object.size(main_roads)
+main_roads_simple  <- rmapshaper::ms_simplify(main_roads)
+object.size(main_roads_simple)
+```
+
+rmapshaper only had a little effect. Maybe use mapshaper.org to simplify the lines more
+
+Plot on a map
+
+```{r}
+pal <- colorNumeric('BuGn', domain = c(0, 125))
+leaflet(main_roads) %>%
+  addTiles() %>%
+  addPolylines(opacity = 1, color = pal(main_roads$maxspeed)) %>%
+  addLegend(position = 'bottomleft', pal = pal, values = seq(0, 125, by = 25), opacity = 1,
+            title = 'Speed kph')
+```
+
